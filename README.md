@@ -1,37 +1,42 @@
-vagrant-django-template
-=======================
+# Mediaclash Base CMS Project Template
 
-A template for new Django 1.9 projects developed under Vagrant. Features offered include:
+This is the Mediaclash 'blank' CMS template for new projects. It's based on the torchbox vagrant django template from https://github.com/torchbox/vagrant-django-template
 
-* A Vagrantfile for building an Ubuntu Trusty based VM
-* A virtualenv (configured to be active on login), with project dependencies managed through a requirements.txt file
-* A PostgreSQL database (with the same name as the project, pre-configured in the project settings file)
-* Separation of configuration settings into base.py, dev.py and production.py (and optionally local.py, kept outside
-  of version control) as per http://www.sparklewise.com/django-settings-for-production-and-development-best-practices/
-* django-compressor and django-debug-toolbar out of the box
-* A boilerplate base template with jquery included, and various other ideas and best practices borrowed from https://github.com/h5bp/html5-boilerplate
+## Getting Started
+You'll need to install django 1.9+ on your development machine, either globally or inside a virtualenv. You'll also need fabric and fabtools installed
+```sh
+pip install django>=1.9
+pip install fabric fabtools
+```
 
-Setup
------
-Install Django 1.9 on your host machine. (Be sure to explicitly uninstall earlier versions first, or use a virtualenv -
-having earlier versions around seems to cause pre-1.4-style settings.py and urls.py files to be generated alongside the
-new ones.)
+Next, run the standard django startproject command, with this repository as the base template:
 
-To start a new project, run the following commands:
+```sh
+cd /my-development-folder/
+django-admin.py startproject --template https://github.com/mediaclash/vagrant-django-template/zipball/master --name=Vagrantfile myproject
+cd myproject
+vagrant up
+```
 
-    django-admin.py startproject --template https://github.com/torchbox/vagrant-django-template/zipball/master --name=Vagrantfile myproject
-    cd myproject
-    rm LICENSE  # or amend for your own purposes
-    vagrant up
-    vagrant ssh
-      (then, within the SSH session:)
-    ./manage.py runserver 0.0.0.0:8000
+This process will:
+  - Download and setup a vagrant VM based on ubuntu 14.4 32-bit
+  - Update packages and install development dependencies
+  - Install and setup a postgres database in the VM, with access for the vagrant user
+  - Create shared folders for the project in /var/www/<project_name>/<project_name> ( in the VM )
+  - Create a virtualenv in /var/www/<project_name>/
+  - Install django, django cms, easy thumbnails, compressor, haystack and other useful bits.
+  - Install Apache SOLR for search provision.
+  - Forward 2 ports from the VM - 9000 for the django development server, and 9090 for tomcat / solr.
 
-This will make the app accessible on the host machine as http://localhost:8000/ . The codebase is located on the host
-machine, exported to the VM as a shared folder; code editing and Git operations will generally be done on the host.
+This process will not create a superuser account, you need to do this yourself:
 
-See also
---------
-https://github.com/torchbox/vagrant-django-base - a recipe for a Vagrant base box that can be used in place of precise32
-in the Vagrantfile - this has more of the server setup baked in, so that we can save time by not having to re-run those
-steps every time we create a new VM instance.
+```sh
+vagrant ssh
+python manage.py createsuperuser
+```
+
+There is also a simple fabric file that will just run the development server. Can be expanded based on your needs.
+
+```sh
+fab vagrant devserver
+```
