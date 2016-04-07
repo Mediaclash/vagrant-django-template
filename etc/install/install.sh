@@ -9,16 +9,16 @@ PROJECT_NAME=$1
 DB_NAME=$PROJECT_NAME
 VIRTUALENV_NAME=$PROJECT_NAME
 
-PROJECT_DIR=/home/vagrant/$PROJECT_NAME
-VIRTUALENV_DIR=/home/vagrant/.virtualenvs/$PROJECT_NAME
+PROJECT_DIR=/var/www/$PROJECT_NAME/$PROJECT_NAME
+VIRTUALENV_DIR=/var/www/$PROJECT_NAME
 LOCAL_SETTINGS_PATH="/$PROJECT_NAME/settings/local.py"
 
 # Install essential packages from Apt
 apt-get update -y
 # Python dev packages
-apt-get install -y build-essential python python3-dev
+apt-get install -y build-essential python python-dev
 # python-setuptools being installed manually
-wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py -O - | python3.4
+wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py -O - | python
 # Dependencies for image processing with Pillow (drop-in replacement for PIL)
 # supporting: jpeg, tiff, png, freetype, littlecms
 # (pip install pillow to get pillow itself, it is not in requirements.txt)
@@ -31,6 +31,8 @@ if ! command -v psql; then
     apt-get install -y postgresql libpq-dev
     # Create vagrant pgsql superuser
     su - postgres -c "createuser -s vagrant"
+    # create a user for our project
+    su - postgres -c "createuser -s $PROJECT_NAME"
 fi
 
 # virtualenv global setup
@@ -38,7 +40,7 @@ if ! command -v pip; then
     easy_install -U pip
 fi
 if [[ ! -f /usr/local/bin/virtualenv ]]; then
-    pip3.4 install virtualenv virtualenvwrapper stevedore virtualenv-clone
+    pip install virtualenv virtualenvwrapper stevedore virtualenv-clone
 fi
 
 # bash environment global setup
@@ -49,18 +51,22 @@ cp -p $PROJECT_DIR/etc/install/bashrc /home/vagrant/.bashrc
 # postgresql setup for project
 su - vagrant -c "createdb $DB_NAME"
 
+# make sure we own the virtualenv folder
+sudo chown vagrant:vagrant -R $VIRTUALENV_DIR
+
 # virtualenv setup for project
-su - vagrant -c "/usr/local/bin/virtualenv $VIRTUALENV_DIR --python=/usr/bin/python3.4 && \
+su - vagrant -c "/usr/local/bin/virtualenv $VIRTUALENV_DIR && \
     echo $PROJECT_DIR > $VIRTUALENV_DIR/.project && \
     $VIRTUALENV_DIR/bin/pip install -r $PROJECT_DIR/requirements.txt"
 
-echo "workon $VIRTUALENV_NAME" >> /home/vagrant/.bashrc
+echo "source $VIRTUALENV_DIR/bin/activate && cd $PROJECT_DIR" >> /home/vagrant/.bashrc
 
 # Set execute permissions on manage.py, as they get lost if we build from a zip file
 chmod a+x $PROJECT_DIR/manage.py
 
 # Django project setup
-su - vagrant -c "source $VIRTUALENV_DIR/bin/activate && cd $PROJECT_DIR && ./manage.py migrate"
+su - vagrant -c "$VIRTUALENV_DIR/bin/python $PROJECT_DIR/manage.py migrate"
+
 
 # Add settings/local.py to gitignore
 if ! grep -Fqx $LOCAL_SETTINGS_PATH $PROJECT_DIR/.gitignore
@@ -70,16 +76,16 @@ fi
 
 # setup JRE for solr / tomcat
 apt-get -y install python-software-properties
-add-apt-repository -y ppa:webupd8team/java 
-apt-get -q -y update 
- 
+add-apt-repository -y ppa:webupd8team/java
+apt-get -q -y update
+
 echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
 echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
- 
-apt-get -y install oracle-java7-installer 
- 
+
+apt-get -y install oracle-java7-installer
+
 echo -e "nnJAVA_HOME=/usr/lib/jvm/java-7-oracle" >> /etc/environment;
-export JAVA_HOME=/usr/lib/jvm/java-7-oracle/ 
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
 
 # Check for md5sum & tar
 program_exists md5sum
@@ -182,8 +188,14 @@ ARRAY_SOLR_VERSION=(${SOLR_VERSION//./ })
 # Construct a filename and download the file to $DOWNLOAD_DIR
 SOLR_FILENAME=solr-$SOLR_VERSION.tgz
 SOLR_FILE_URL=${MIRROR}lucene/solr/$SOLR_VERSION/$SOLR_FILENAME
-echo Downloading: $SOLR_FILE_URL
-curl -o $DOWNLOAD_DIR/$SOLR_FILENAME $SOLR_FILE_URL
+
+if [ -f "$DOWNLOAD_DIR/$SOLR_FILENAME" ];
+then
+  echo Using cached copy of Solr at: $DOWNLOAD_DIR/$SOLR_FILENAME
+else
+  echo Downloading: $SOLR_FILE_URL
+  curl -o $DOWNLOAD_DIR/$SOLR_FILENAME $SOLR_FILE_URL
+fi
 
 # Verify the download
 SOLR_MD5_URL=$APACHE_BACKUP_URL/$SOLR_VERSION/$SOLR_FILENAME.md5

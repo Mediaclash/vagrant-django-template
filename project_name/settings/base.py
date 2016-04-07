@@ -31,10 +31,19 @@ ADMINS = [
     # ('Your Name', 'your_email@example.com'),
 ]
 
+SITE_ID = 1
+
+# CMS templates
+CMS_TEMPLATES = (
+    ('template_1.html', 'Template One'),
+    ('template_2.html', 'Template Two'),
+)
 
 # Application definition
 
 INSTALLED_APPS = [
+    'djangocms_admin_style',
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,22 +53,51 @@ INSTALLED_APPS = [
 
     'compressor',
     'debug_toolbar',
+    'easy_thumbnails',
+    'django_extensions',
+
+    'cms',
+    'menus',
+    'sekizai',
+    'treebeard',
+    'djangocms_text_ckeditor',
+    'djangocms_style',
+    'djangocms_column',
+    'djangocms_file',
+    'djangocms_inherit',
+    'djangocms_link',
+    'djangocms_picture',
+    'djangocms_teaser',
+    'djangocms_video',
+
+
 
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 
     'core',
+
+
+    'opbeat.contrib.django',
 ]
 
 MIDDLEWARE_CLASSES = [
+    'django.middleware.cache.UpdateCacheMiddleware',
+    'cms.middleware.utils.ApphookReloadMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'cms.middleware.user.CurrentUserMiddleware',
+    'cms.middleware.page.CurrentPageMiddleware',
+    'cms.middleware.toolbar.ToolbarMiddleware',
+    'cms.middleware.language.LanguageCookieMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 ROOT_URLCONF = '{{ project_name }}.urls'
@@ -75,6 +113,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'sekizai.context_processors.sekizai',
+                'cms.context_processors.cms_settings',
             ],
         },
     },
@@ -121,7 +161,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
-LANGUAGE_CODE = 'en-gb'
+LANGUAGE_CODE = 'en'
 
 TIME_ZONE = 'Europe/London'
 
@@ -130,6 +170,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+LANGUAGES = [
+    ('en', 'English'),
+]
 
 
 # Static files (CSS, JavaScript, Images)

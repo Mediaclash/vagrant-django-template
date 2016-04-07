@@ -1,33 +1,55 @@
-<!doctype html>
-{% load compress %}
-
+{% spaceless %}<!doctype html>
+{% load compress sekizai_tags cms_tags staticfiles i18n menu_tags %}
+{% get_current_language as LANGUAGE_CODE %}
 {% comment %} paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ {% endcomment %}
-<!--[if lt IE 7]> <html class="lt-ie10 lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="lt-ie10 lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="lt-ie10 lt-ie9" lang="en"> <![endif]-->
-<!--[if IE 9]>    <html class="lt-ie10" lang="en"> <![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html lang="en"> <!--<![endif]-->
+<!--[if lt IE 7]> <html class="lt-ie10 lt-ie9 lt-ie8 lt-ie7" lang="{{ LANGUAGE_CODE }}"> <![endif]-->
+<!--[if IE 7]>    <html class="lt-ie10 lt-ie9 lt-ie8" lang="{{ LANGUAGE_CODE }}"> <![endif]-->
+<!--[if IE 8]>    <html class="lt-ie10 lt-ie9" lang="{{ LANGUAGE_CODE }}"> <![endif]-->
+<!--[if IE 9]>    <html class="lt-ie10" lang="{{ LANGUAGE_CODE }}"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html lang="{{ LANGUAGE_CODE }}"> <!--<![endif]-->
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
 
-    <title></title>
+    <title>{% page_attribute "page_title" %}</title>
+    <meta name="description" content="{% page_attribute "meta_description" %}" />
 
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+
+    <meta property="og:title" content="{% page_attribute "page_title" %}" />
+    <meta property="og:description" content="{% page_attribute "meta_description" %}" />
+    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+    <meta property="og:image" content="{% block og_image %}{% endblock %}" />
+
+    {% endspaceless %}
+    {% render_block "css" %}
     {% compress css %}
         {% comment %} Core CSS includes (for inclusion on all pages) {% endcomment %}
-
     {% endcompress %}
-
     {% compress css %}
         {% comment %}
-            Per-page CSS is compressed separately so that the global stuff doesn't get re-downloaded each time 
+            Per-page CSS is compressed separately so that the global stuff doesn't get re-downloaded each time
         {% endcomment %}
         {% block extra_css %}{% endblock %}
     {% endcompress %}
 
 </head>
 <body>
-    {% block content %}{% endblock %}
+
+    {% cms_toolbar %}
+
+    <section id="header">
+      {% include "navigation.html" %}
+    </section>
+
+    <section id="main">
+      {% block content %}{% endblock %}
+    </section>
+
+    <section id="footer">
+
+    </section>
 
     {% comment %}
         JavaScript at the bottom for fast page loading:
@@ -38,14 +60,15 @@
         {% comment %}
             Core JS includes (for inclusion on all pages) to be specified here
         {% endcomment %}
-        <script src="{{ STATIC_URL }}js/jquery-1.9.1.js"></script>
+        <script src="{% static "js/jquery-1.9.1.js" %}"></script>
     {% endcompress %}
 
     {% compress js %}
         {% comment %}
-            Per-page JS is compressed separately so that the global stuff doesn't get re-downloaded each time 
+            Per-page JS is compressed separately so that the global stuff doesn't get re-downloaded each time
         {% endcomment %}
         {% block extra_js %}{% endblock %}
     {% endcompress %}
+    {% render_block "js" %}
 </body>
 </html>
