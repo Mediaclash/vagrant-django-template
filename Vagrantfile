@@ -22,16 +22,51 @@ Vagrant.configure('2') do |config|
 
 	# Forward a port from the guest to the host, which allows for outside
 	# computers to access the VM, whereas host only networking does not.
-	config.vm.network "forwarded_port", guest: 8000, host: 9000
+	# config.vm.network "forwarded_port", guest: 8000, host: 4001
 
 	# forward a port for tomcat as well
-	config.vm.network "forwarded_port", guest: 8080, host: 9090
+	# config.vm.network "forwarded_port", guest: 8080, host: 9092
 
-	# Share an additional folder to the guest VM. The first argument is
-	# an identifier, the second is the path on the guest to mount the
-	# folder, and the third is the path on the host to the actual folder.
-	config.vm.synced_folder ".", "/var/www/{{ project_name }}/{{ project_name }}"
+	# VirtualBox setting
+	  # Use all CPU cores and 1/4 system memory
+	  config.vm.provider "virtualbox" do |v|
+	      host = RbConfig::CONFIG['host_os']
 
-	# Enable provisioning with a shell script.
-	config.vm.provision :shell, :path => "etc/install/install.sh", :args => "{{ project_name }}"
+	      # Give VM 1/8 system memory & access to all cpu cores on the host
+	      if host =~ /darwin/
+	          cpus = `sysctl -n hw.ncpu`.to_i
+	          # sysctl returns Bytes and we need to convert to MB
+	          mem = `sysctl -n hw.memsize`.to_i / 1024 / 1024 / 8
+	      elsif host =~ /linux/
+	          cpus = `nproc`.to_i
+	          # meminfo shows KB and we need to convert to MB
+	          mem = `grep 'MemTotal' /proc/meminfo | sed -e 's/MemTotal://' -e 's/ kB//'`.to_i / 1024 / 8
+	      else # sorry Windows folks, I can't help you
+	          cpus = 2
+	          mem = 1024
+	      end
+
+	      v.customize ["modifyvm", :id, "--memory", mem]
+	      v.customize ["modifyvm", :id, "--cpus", cpus]
+	  end
+
+		# Share an additional folder to the guest VM. The first argument is
+		# an identifier, the second is the path on the guest to mount the
+		# folder, and the third is the path on the host to the actual folder.
+		config.vm.synced_folder ".", "/var/www/{{ project_name }}/{{ project_name }}"
+
+		# Enable provisioning with a shell script.
+		config.vm.provision :shell, :path => "etc/install/install.sh", :args => "{{ project_name }}"
+
+
+		# Host Manager
+	  config.hostmanager.enabled = true
+	  config.hostmanager.manage_host = true
+	  config.hostmanager.ignore_private_ip = false
+	  config.hostmanager.include_offline = true
+	  config.vm.define '{{ project_name }}.dev' do |node|
+	      node.vm.hostname = '{{ project_name }}.dev'
+	      node.vm.network :private_network, ip: '192.168.98.100'
+	      node.hostmanager.aliases = %w({{ project_name }}.dev)
+	  end
 end

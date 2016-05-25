@@ -25,6 +25,9 @@ SECRET_KEY = '{{ secret_key }}'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_USE_FINDERS = DEBUG
+
 ALLOWED_HOSTS = []
 
 ADMINS = [
@@ -42,19 +45,30 @@ CMS_TEMPLATES = (
 # Application definition
 
 INSTALLED_APPS = [
-    'djangocms_admin_style',
     'django.contrib.sites',
+
+    'core',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    'djangocms_admin_style',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
     'compressor',
     'debug_toolbar',
     'easy_thumbnails',
     'django_extensions',
+    'easy_thumbnails.optimize',
+
+    'filer',
 
     'cms',
     'menus',
@@ -70,15 +84,13 @@ INSTALLED_APPS = [
     'djangocms_teaser',
     'djangocms_video',
 
-
+    'aldryn_bootstrap3',
 
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-
-    'core',
-
-
     'opbeat.contrib.django',
+
+    ### PROJECT APPS HERE ###
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -123,6 +135,10 @@ TEMPLATES = [
 WSGI_APPLICATION = '{{ project_name }}.wsgi.application'
 
 
+CMS_PLACEHOLDER_CONF = {
+    # Add some config here
+}
+
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
@@ -157,6 +173,33 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+AUTH_USER_MODEL = 'core.EmailUser'
+
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+
+ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+ACCOUNT_USERNAME_REQUIRED = False
+
+ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.SignupForm'
+
+ACCOUNT_USER_DISPLAY = 'core.models.get_user_display_name'
+
+CMS_PERMISSION = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
@@ -207,16 +250,36 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+## Enable for image optimization, requires pngquant
+THUMBNAIL_OPTIMIZE_COMMAND = {
+    'png': '/usr/bin/pngquant --force -o {filename} {filename}',
+}
+
+THUMBNAIL_PROCESSORS = (
+    'easy_thumbnails.processors.colorspace',
+    'easy_thumbnails.processors.autocrop',
+    #'easy_thumbnails.processors.scale_and_crop',
+    'filer.thumbnail_processors.scale_and_crop_with_subject_location',
+    'easy_thumbnails.processors.filters',
+)
 
 EMAIL_SUBJECT_PREFIX = '[{{ project_name }}] '
 
 INTERNAL_IPS = ['127.0.0.1', '10.0.2.2']
 
+# Opbeat settings
+OPBEAT = {
+    'ORGANIZATION_ID': '',
+    'APP_ID': '',
+    'SECRET_TOKEN': '',
+}
 
 # django-compressor settings
 COMPRESS_PRECOMPILERS = [
     ('text/x-scss', 'django_libsass.SassCompiler'),
 ]
+
+COMPRESS_ENABLED = False
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

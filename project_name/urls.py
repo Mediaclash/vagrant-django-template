@@ -17,9 +17,20 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 import debug_toolbar
+from django.conf import settings
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from cms.sitemaps import CMSSitemap
+from django.contrib.sitemaps.views import sitemap
+from django.conf.urls.static import static
 
 urlpatterns = [
     url(r'^__debug__/', include(debug_toolbar.urls)),
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/', include('allauth.urls')),
+    url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'cmspages': CMSSitemap }}),
     url(r'^', include('cms.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += static (settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
