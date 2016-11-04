@@ -16,7 +16,22 @@ LOCAL_SETTINGS_PATH="/$PROJECT_NAME/settings/local.py"
 # Install essential packages from Apt
 apt-get update -y
 # Python dev packages
-apt-get install -y build-essential python python-dev
+sudo apt-get install -y build-essential checkinstall
+
+# update python to 2.7.12
+sudo apt-get install -y libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
+cd /usr/src
+
+wget https://www.python.org/ftp/python/2.7.11/Python-2.7.11.tgz
+
+tar xzf Python-2.7.11.tgz
+
+cd /usr/src/Python-2.7.11
+
+./configure --prefix /usr/local/lib/python2.7.11 --enable-ipv6
+
+sudo make install
+
 # python-setuptools being installed manually
 wget https://raw.githubusercontent.com/pypa/setuptools/bootstrap/ez_setup.py -O - | python
 # Dependencies for image processing with Pillow (drop-in replacement for PIL)
@@ -58,7 +73,7 @@ su - vagrant -c "createdb $DB_NAME"
 sudo chown vagrant:vagrant -R $VIRTUALENV_DIR
 
 # virtualenv setup for project
-su - vagrant -c "/usr/local/bin/virtualenv $VIRTUALENV_DIR && \
+su - vagrant -c "/usr/local/bin/virtualenv $VIRTUALENV_DIR --python=/usr/local/lib/python2.7.11/bin/python && \
     echo $PROJECT_DIR > $VIRTUALENV_DIR/.project && \
     $VIRTUALENV_DIR/bin/pip install -r $PROJECT_DIR/requirements.txt"
 
